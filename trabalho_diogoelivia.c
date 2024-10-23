@@ -26,6 +26,7 @@ relatórios sejam gerados pelo sistema:
 #include <string.h>
 
 //Cabeçalho das subrotinas (funções auxiliares)
+
 void cadastrarNovosExemplares();
 void cadastrarNovoUsuario();
 void controleEmprestimoDevolucao();
@@ -61,6 +62,8 @@ int main()
 
     return 0;
 }
+
+//Implementação de subrotinas
 
 void cadastrarNovosExemplares()
 {
