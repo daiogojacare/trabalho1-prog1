@@ -1,31 +1,7 @@
-/*Considere que você foi contratado por uma empresa para desenvolver um sistema de controle de acervo de
-livros. Esta empresa possui uma vasta biblioteca que é utilizada pelos seus funcionários. No entanto, todo o
-controle sobre empréstimos, novas aquisições e baixa de exemplares é realizado de forma manual. O
-responsável pela biblioteca precisa que você desenvolva um sistema para gerenciar o acervo de livros da
-empresa. O sistema deverá permitir que sejam feitas as seguintes operações:
-• Cadastro de novos exemplares;
-• Cadastro de usuários da biblioteca;
-• Controle de empréstimo e devolução de exemplares;
-• Baixa de exemplares;
-• Localização de exemplares por título, palavras-chave ou autor;
-• Localização de usuários por nome.
-O responsável pela biblioteca precisa que os seguintes dados sejam armazenados em relação aos livros:
-título, editora, ano de publicação, autor(es) (no máximo três autores), número de páginas, edição, local da
-publicação, palavras-chave e quantidade de exemplares. Para um efetivo controle do acervo também é
-necessário que se tenha os seguintes dados dos usuários da biblioteca: nome, endereço, telefone para
-contato, email, nº do crachá da empresa (identificação numérica), status (ativo, não ativo).
-Além das funcionalidades especificadas acima o responsável pela biblioteca precisa que os seguintes
-relatórios sejam gerados pelo sistema:
-• Relatório de acervo;
-• Relatório de usuários;
-• Relatório de empréstimos;
-• Relatório de pendências (livros emprestados e ainda não devolvidos na data prevista de devolução);
-• Relatório de livros editados em uma determinada faixa de ano (Ex. 2020 a 2024).*/
-
 #include <stdio.h>
 #include <string.h>
 
-#define STR_TAM 55
+#define STR_TAM 30
 #define MAX_LIVROS 100
 #define MAX_USUARIOS 100
 
@@ -141,7 +117,7 @@ void cadastrarNovoUsuario() {
         printf("Crachá (ID): ");
         scanf("%d", &usuarios[qtd_usuarios].cracha);
         getchar();
-        usuarios[qtd_usuarios].status = 1;
+        usuarios[qtd_usuarios].status = 1; // Usuário ativo por padrão
         qtd_usuarios++;
         printf("Usuário cadastrado com sucesso!\n");
     } else {
@@ -161,17 +137,31 @@ void baixaDeExemplares()
     // Implementar a função para baixa de exemplares
 }
 
-void localizacaoDeExemplares()
-{
-    int i; 
 
-    printf("Digite o título do livro para localizar: %s", livros[i].titulo);
+void localizacaoDeExemplares() {
+    string titulo;
+    int i, encontrado = 0;
+
+    printf("Digite o título do livro para localizar: ");
+    fgets(titulo, STR_TAM, stdin);
+    titulo[strcspn(titulo, "\n")] = '\0'; // Remove o caractere de nova linha
+
     for (i = 0; i < qtd_livros; i++) {
-        if(strcmp(livros[i].titulo, titulo) == 0) {
-            return i;
+        if (strcmp(livros[i].titulo, titulo) == 0) {
+            printf("Livro encontrado:\n");
+            printf("Título: %s\n", livros[i].titulo);
+            printf("Autor: %s\n", livros[i].autor);
+            printf("Ano de publicação: %d\n", livros[i].ano_publicacao);
+            encontrado = 1;
+            break;
         }
     }
+
+    if (!encontrado) {
+        printf("Livro não encontrado.\n");
+    }
 }
+
 void localizacaoDeUsuarios()
 {
     // Implementar a função para localização de usuários
