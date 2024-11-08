@@ -1,8 +1,14 @@
-/*
+/*Considere que você foi contratado por uma empresa para desenvolver um sistema de controle de acervo de
+livros. Esta empresa possui uma vasta biblioteca que é utilizada pelos seus funcionários. No entanto, todo o
+controle sobre empréstimos, novas aquisições e baixa de exemplares é realizado de forma manual. O
+responsável pela biblioteca precisa que você desenvolva um sistema para gerenciar o acervo de livros da
+empresa. O sistema deverá permitir que sejam feitas as seguintes operações:
+• Cadastro de novos exemplares; FEITO
+• Cadastro de usuários da biblioteca; FEITO
 • Controle de empréstimo e devolução de exemplares;
-• Baixa de exemplares;
+• Baixa de exemplares; A FAZER
 • Localização de exemplares por título, palavras-chave ou autor;
-• Localização de usuários por nome.
+• Localização de usuários por nome. FEITO
 O responsável pela biblioteca precisa que os seguintes dados sejam armazenados em relação aos livros:
 título, editora, ano de publicação, autor(es) (no máximo três autores), número de páginas, edição, local da
 publicação, palavras-chave e quantidade de exemplares. Para um efetivo controle do acervo também é
@@ -10,9 +16,12 @@ necessário que se tenha os seguintes dados dos usuários da biblioteca: nome, e
 contato, email, nº do crachá da empresa (identificação numérica), status (ativo, não ativo).
 Além das funcionalidades especificadas acima o responsável pela biblioteca precisa que os seguintes
 relatórios sejam gerados pelo sistema:
-• Relatório de acervo;  
+• Relatório de acervo; FEITO
+• Relatório de usuários; FEITO
+• Relatório de empréstimos; FEITO
 • Relatório de pendências (livros emprestados e ainda não devolvidos na data prevista de devolução);
 • Relatório de livros editados em uma determinada faixa de ano (Ex. 2020 a 2024).*/
+
 //Bibliotecas
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,7 +31,7 @@ relatórios sejam gerados pelo sistema:
 
 //Definição de constantes
 #define STR_TAM 55 //Tamanho da string
-#define MAX_QTD 100 //Quantidade max de livros
+#define MAX_QTD 100 //Quantidade max de livros/usuarios
 
 //Definição de tipos
 typedef char string[STR_TAM]; 
@@ -32,8 +41,12 @@ struct exemplares {
     string titulo;
     string autor;
     string editora;
+    string edicao;
+    string local_publicacao;
+    string palavras_chave;
+    int num_paginas;
     int ano_publicacao;
-    float vlr_emprestimo;
+    int qtd_exemplar;
     bool status;   // false - se emprestado; true - se disponível
 };
 
@@ -52,7 +65,6 @@ struct emprestimos {
   int id_cliente;
   string livro_titulo;
   int qtd_dias;
-  float vlr_emprestimo;
 };
 
 // Declaração dos arrays para armazenar os dados
@@ -71,7 +83,9 @@ struct usuarios cadastrarNovosUsuarios();
 void controleEmprestimoDevolucao();
 void baixaDeExemplares();
 int localizacaoDeExemplares();
-void localizacaoDeUsuarios();
+void dadosExemplares();
+int localizacaoDeUsuarios();
+void dadosUsuarios();
 void relatorioAcervo();
 void relatorioUsuarios();
 void relatorioEmprestimos();
@@ -99,10 +113,23 @@ int main() {
                     break;
             case 4: baixaDeExemplares(); 
                     break;
-            case 5: localizacaoDeExemplares(); 
+            case 5: printf("Qual o título, palavras-chave ou autor do livro que vc procura?\n");
+
+                    idx = localizacaoDeExemplares(titulo);
+
                     break;
-            case 6: 
-                    localizacaoDeUsuarios(); 
+            case 6: printf("Qual o nome do usuário?\n");
+                    fgets(nome, STR_TAM, stdin);
+                    retirar_enter_string(nome);
+                    formatar_maiuscula(nome);
+
+                    idx = localizacaoDeUsuarios(nome);
+
+                    if (idx < 0) {
+                        printf("O usuário %s não existe!\n", nome);
+                    } else {
+                        dadosUsuarios(idx); 
+                    }
                     break;
             case 7:
                 subopcao = submenu();
@@ -114,7 +141,7 @@ int main() {
                             break;
                     case 3: relatorioEmprestimos(); 
                             break;
-                            case 4: relatorioPendencias(); 
+                    case 4: relatorioPendencias(); 
                             break;
                     case 5: relatorioLivrosEditados(); 
                             break;
@@ -182,11 +209,6 @@ struct exemplares cadastrarNovosExemplares()
     retirar_enter_string(novo.titulo);
     formatar_maiuscula(novo.titulo);
 
-    printf("Autor do livro: ");
-    fgets(novo.autor, STR_TAM, stdin);
-    retirar_enter_string(novo.autor);
-    formatar_maiuscula(novo.autor);
-
     printf("Editora do livro: ");
     fgets(novo.editora, STR_TAM, stdin);
     retirar_enter_string(novo.editora);
@@ -194,9 +216,31 @@ struct exemplares cadastrarNovosExemplares()
 
     printf("Ano de publicação: ");
     scanf("%i", &novo.ano_publicacao);
+
+    printf("Autor do livro: ");
+    fgets(novo.autor, STR_TAM, stdin);
+    retirar_enter_string(novo.autor);
+    formatar_maiuscula(novo.autor);
+
+    printf("Número de páginas: ");
+    scanf("%i", &novo.num_paginas);
+
+    printf("Edição do livro: ");
+    fgets(novo.edicao, STR_TAM, stdin);
+    retirar_enter_string(novo.edicao);
+    formatar_maiuscula(novo.edicao);
+
+    printf("Local de publicação: ");
+    fgets(novo.local_publicacao, STR_TAM, stdin);
+    retirar_enter_string(novo.local_publicacao);
+    formatar_maiuscula(novo.local_publicacao);
+
+    printf("Palavras-chave do livro: ");
+    fgets(novo.palavras_chave, STR_TAM, stdin);
+    retirar_enter_string(novo.palavras_chave);
+    formatar_maiuscula(novo.palavras_chave);
     
-    printf("Valor do empréstimo: ");
-    scanf("%f", &novo.vlr_emprestimo);
+    novo.qtd_exemplar++;
 
     novo.status = true;
 
@@ -241,23 +285,26 @@ struct usuarios cadastrarNovosUsuarios()
 }
 
 // Função para localizar exemplares
-int localizacaoDeUsuarios()
+int localizacaoDeUsuarios(string nome)
 {
+    int i;
 
+    for(i = 0; i < qtd_usuarios; i++){
+        if(strcmp(vetor_usuarios[i].nome, nome) == 0){
+            return i;
+        }
+    }
+    return -1;
 }
 
-// Função para exibir exemplares
-void relatorioExemplares()
+// Função para os dados dos usuários
+void dadosUsuarios(int posicao)
 {
-   int i;
-
-    for(i = 0; i < qtd_exemplares; i++){
-        printf("Título: %s\n",vetor_exemplares[i].titulo);
-        printf("Autor: %s\n",vetor_exemplares[i].autor);
-        printf("Editora: %s\n",vetor_exemplares[i].editora);
-        printf("Ano de publicação: %d\n", vetor_exemplares[i].ano_publicacao);
-        printf("Status: %s\n", (vetor_exemplares[i].status)? "Disponível" : "Emprestado");
-    } 
+    printf("Nome: %s\n", vetor_usuarios[posicao].nome);
+    printf("Email: %s\n", vetor_usuarios[posicao].email);
+    printf("Telefone: %s\n", vetor_usuarios[posicao].telefone);
+    printf("Endereço: %s\n", vetor_usuarios[posicao].endereco);
+    printf("CPF: %s\n", vetor_usuarios[posicao].cpf);
 }
 
 // Função para exibir usuários
@@ -266,12 +313,44 @@ void relatorioUsuarios()
     int i;
 
     for(i = 0; i < qtd_usuarios; i++){
-        printf("Nome: %s\n",vetor_usuarios[i].nome);
-        printf("Email: %s\n", vetor_usuarios[i].email);
-        printf("Telefone: %s\n", vetor_usuarios[i].telefone);
-        printf("Endereço: %s\n", vetor_usuarios[i].endereco);
-        printf("CPF: %s\n", vetor_usuarios[i].cpf);
-        printf("ID: %d\n", vetor_usuarios[i].id);
+        dadosUsuarios(i);
+    }
+}
+
+// Função para exibir exemplares
+void relatorioAcervo()
+{
+   int i;
+
+    for(i = 0; i < qtd_exemplares; i++){
+        dadosExemplares(i);
+    } 
+}
+
+// Função para dados de exemplares
+void dadosExemplares(int posicao)
+{
+    printf("Título: %s\n", vetor_exemplares[posicao].titulo);
+    printf("Editora: %s\n", vetor_exemplares[posicao].editora);
+    printf("Ano de publicação: %d\n", vetor_exemplares[posicao].ano_publicacao);
+    printf("Autor: %s\n", vetor_exemplares[posicao].autor);
+    printf("Número de páginas: %d\n", vetor_exemplares[posicao].num_paginas);
+    printf("Edição: %s\n", vetor_exemplares[posicao].edicao);
+    printf("Local de publicação: %s\n", vetor_exemplares[posicao].local_publicacao);
+    printf("Palavras-chave: %s\n", vetor_exemplares[posicao].palavras_chave);
+    printf("Quantidade: %i\n", vetor_exemplares[posicao].qtd_exemplar);
+    printf("Status: %s\n", (vetor_exemplares[posicao].status)? "Disponível" : "Emprestado");
+}
+
+// Função para relatório de empréstimos
+void relatorioEmprestimos()
+{
+    int i;
+
+    for(i = 0; i < qtd_emprestimos; i++){
+        printf("ID do cliente: %i\n", vetor_emprestimos[i].id_cliente);
+        printf("Título do livro: %i\n", vetor_emprestimos[i].livro_titulo);
+        printf("Quantidade de dias: %i\n", vetor_emprestimos[i].qtd_dias);
     }
 }
 
