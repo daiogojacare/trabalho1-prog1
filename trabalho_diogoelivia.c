@@ -490,6 +490,10 @@ void relatorioUsuarios()
     for(i = 0; i < qtd_usuarios; i++){
         dadosUsuarios(i);
     }
+
+    if(qtd_usuarios == 0){
+        printf("\nNenhum usuario cadastrado!\n");
+    }
 }
 
 // Função para exibir exemplares
@@ -500,6 +504,10 @@ void relatorioAcervo()
     for(i = 0; i < qtd_exemplares; i++){
         dadosExemplares(i);
     } 
+
+    if(qtd_exemplares == 0){
+        printf("\nNenhum exemplar cadastrado!\n");
+    }
 }
 
 // Função para dados de exemplares
@@ -527,6 +535,10 @@ void relatorioEmprestimos()
         printf("Titulo do livro: %s\n", vetor_emprestimos[i].livro_titulo);
         printf("Quantidade de dias: %i\n", vetor_emprestimos[i].qtd_dias);
     }
+
+    if(qtd_emprestimos == 0){
+        printf("\nNenhum emprestimo realizado!\n");
+    }
 }
 
 // Função para relatório de pendências (livros emprestados e ainda não devolvidos na data prevista de devolução)
@@ -544,12 +556,17 @@ void relatorioPendencias() {
             printf("Dias de emprestimo: %i\n\n", vetor_emprestimos[i].qtd_dias);
         }
     }
+
+    if (qtd_emprestimos == 0) {
+        printf("\nNenhum emprestimo realizado!\n");
+    }
 }
 
 // Função para relatório de livros editados em determinada faixa de ano
 void relatorioLivrosEditados()
 {
     int i, ano_inicial, ano_final;
+    int ano_publicacao_int;
 
     printf("\nDigite o ano inicial: ");
     scanf("%i", &ano_inicial);
@@ -559,12 +576,17 @@ void relatorioLivrosEditados()
     printf("\nLivros publicados entre %i e %i:\n", ano_inicial, ano_final);
 
     for(i = 0; i < qtd_exemplares; i++){
-        if(vetor_exemplares[i].ano_publicacao >= ano_inicial && vetor_exemplares[i].ano_publicacao <= ano_final){
+        // Converte o ano de publicação de string para inteiro
+        ano_publicacao_int = atoi(vetor_exemplares[i].ano_publicacao);
+
+        if(ano_publicacao_int >= ano_inicial && ano_publicacao_int <= ano_final){
             dadosExemplares(i);
             printf("\n");
-        } else {
-            printf("Nenhum livro encontrado.\n");
         }
+    }
+
+    if(qtd_exemplares == 0){
+        printf("\nNenhum exemplar cadastrado!\n");
     }
 }
 
