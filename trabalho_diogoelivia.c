@@ -434,9 +434,12 @@ void baixaDeExemplares(int posicao)
 {
     if (vetor_exemplares[posicao].qtd_exemplar > 0) {
         vetor_exemplares[posicao].qtd_exemplar--;
-        printf("\nBaixa realizada com sucesso! Exemplares restantes: %d\n", vetor_exemplares[posicao].qtd_exemplar);
+        if (vetor_exemplares[posicao].qtd_exemplar == 0) {
+            vetor_exemplares[posicao].status = false; 
+        }
+        printf("\nBaixa realizada com sucesso! Exemplares restantes: %i\n", vetor_exemplares[posicao].qtd_exemplar);
     } else {
-        printf("\nNão há mais exemplares disponiveis para baixa.\n");
+        printf("\nNão há mais exemplares disponíveis para baixa.\n");
     }
 }
 
@@ -536,13 +539,12 @@ void relatorioPendencias() {
     for (i = 0; i < qtd_emprestimos; i++) {
         int idx_exemplar = localizacaoDeExemplares(vetor_emprestimos[i].livro_titulo);
         if (idx_exemplar >= 0 && vetor_exemplares[idx_exemplar].status == false) {
-            printf("ID do usuário: %i\n", vetor_emprestimos[i].id_usuario);
-            printf("Título do livro: %s\n", vetor_emprestimos[i].livro_titulo);
-            printf("Dias de empréstimo: %i\n\n", vetor_emprestimos[i].qtd_dias);
+            printf("ID do usuario: %i\n", vetor_emprestimos[i].id_usuario);
+            printf("Titulo do livro: %s\n", vetor_emprestimos[i].livro_titulo);
+            printf("Dias de emprestimo: %i\n\n", vetor_emprestimos[i].qtd_dias);
         }
     }
 }
-
 
 // Função para relatório de livros editados em determinada faixa de ano
 void relatorioLivrosEditados()
