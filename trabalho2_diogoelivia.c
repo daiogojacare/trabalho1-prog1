@@ -59,31 +59,40 @@ int submenu();
 // Funções para exemplares
 exemplares_t *cadastrarExemplares(); //FEITO
 void inserir_exemplares_lista(exemplares_t **lista, exemplares_t *novo); //FEITO
-void salvar_dados_exemplares_txt(exemplares_t *lista); //FEITO
 void salvar_dados_exemplares_binario(string nome, exemplares_t *lista); //FEITO
 void ler_dados_exemplares_binario(string nome, exemplares_t **lista); //FEITO
+exemplares_t* localizar_exemplares(exemplares_t *lista, string chave); //FEITO
+void baixar_exemplares(exemplares_t *lista); //FEITO
+void inserir_emprestimos_lista(emprestimos_t **lista, emprestimos_t *novo); //FEITO
 
 // Funções para usuarios
 usuarios_t *cadastrarUsuarios(int *qtd_cliente); //FEITO
 void inserir_usuarios_lista(usuarios_t **lista, usuarios_t *novo); //FEITO
-void salvar_dados_usuarios_txt(usuarios_t *lista); //FEITO
 void salvar_dados_usuarios_binario(string nome, usuarios_t *lista); //FEITO
 void ler_dados_usuarios_binario(string nome, usuarios_t **lista); //FEITO
+usuarios_t* localizar_usuarios(usuarios_t *lista, string nome); //FEITO
+void mostrar_dados_usuarios(usuarios_t *lista); //FEITO
 
 // Funções para emprestimos
 emprestimos_t *emprestimoLivro(int pos_usuario, int pos_exemplar, int qtd_dias); //
 emprestimos_t *realizarEmprestimoLivro(usuarios_t *usuarios, exemplares_t *exemplares, int qtd_dias); //FEITO
+int menuEmprestimoDevolucao(); // FEITO
 void realizarDevolucaoLivro(); //
 void salvar_dados_emprestimos_txt(string nome, emprestimos_t *lista); //FEITO
 void salvar_dados_emprestimos_binario(string nome, emprestimos_t *lista); //FEITO
-void ler_dados_emprestimos_binario(string nome, emprestimos_t **lista); //
+void ler_dados_emprestimos_binario(string nome, emprestimos_t **lista); //FEITO
 
 // Funções para relatórios
 void relatorioAcervo(exemplares_t *lista); //FEITO
+void relatorioAcervo_txt(exemplares_t *lista, string nome); //FEITO
 void relatorioUsuarios(usuarios_t *lista); //FEITO
-void relatorioEmprestimos(emprestimos_t *lista); //FEITO
-void relatorioPendencias(); //
-void relatorioLivrosEditados(); //
+void relatorioUsuarios_txt(usuarios_t *lista, string nome); //FEITO
+void relatorioEmprestimos(emprestimos_t *lista_emprestimos, usuarios_t *lista_usuarios); //FEITO
+void relatorioEmprestimos_txt(emprestimos_t *lista_emprestimos, string nome, usuarios_t *lista_usuarios); //FEITO
+void relatorioPendencias(emprestimos_t *lista_emprestimos, usuarios_t *lista_usuarios); //FEITO
+void relatorioPendencias_txt(emprestimos_t *lista_emprestimos, string nome, usuarios_t *lista_usuarios); //FEITO
+void relatorioLivrosEditados(emprestimos_t *lista); //
+void relatorioLivrosEditados_txt(emprestimos_t *lista, string nome); //
 
 // Funções auxiliares
 void formatar_maiuscula(string str);
@@ -91,67 +100,164 @@ void retirar_enter_string(string str);
 
 // Função principal
 int main() {
-    int opcao, subopcao, subsubopcao;
+    int opcao, subopcao, subsubopcao, qtd_cliente = 0, qtd_dias = 0;
+    string nome_arq, nome, titulo, autor;
 
-    exemplares_t *lista_exemplares = NULL;
-    exemplares_t *novo_exemplares = NULL;
-    usuarios_t *lista_usuarios = NULL;
-    usuarios_t *novo_usuarios = NULL;
+    exemplares_t *lista_exemplares = NULL, *livro;
+    usuarios_t *lista_usuarios = NULL, *usuario;
     emprestimos_t *lista_emprestimos = NULL;
-    emprestimos_t *novo_emprestimos = NULL;
 
     printf("Importando dados ...\n");
-    ler_dados_exemplares_binario("exemplares.csv", &lista_exemplares);
-    ler_dados_usuarios_binario("usuarios.csv", &lista_usuarios);
-    ler_dados_emprestimos_binario("emprestimos.csv", &lista_emprestimos);
+    ler_dados_exemplares_binario("exemplares.bin", &lista_exemplares);
+    ler_dados_usuarios_binario("usuarios.bin", &lista_usuarios);
+    ler_dados_emprestimos_binario("emprestimos.bin", &lista_emprestimos);
     printf("\n");
 
     do {
         opcao = menu();
 
         switch (opcao) {
-            case 1: novo_exemplares = cadastrarExemplares();
-                    inserir_exemplares_lista(&lista_exemplares, novo_exemplares);
+            case 1: inserir_exemplares_lista(&lista_exemplares, cadastrarExemplares());
                     break;
-            case 2: novo_usuarios = cadastrarUsuarios(&lista_usuarios);
-                    inserir_usuarios_lista(&lista_usuarios, novo_usuarios);
+            case 2: inserir_usuarios_lista(&lista_usuarios, cadastrarUsuarios(&qtd_cliente));
                     break;
-            case 3: subsubopcao = controleEmprestimoDevolucao();
+            case 3: subsubopcao = menuEmprestimoDevolucao();
                     switch (subsubopcao) {
-                        case 1: 
+                        case 1: printf("Qual livro será emprestado?\n");
+                                fgets(titulo, STR_TAM, stdin);
+                                retirar_enter_string(titulo);
+                                formatar_maiuscula(titulo);
+
+                                livro = localizar_exemplares(lista_exemplares, titulo);	
+                                if (!livro) {
+                                    printf("O livro %s nao existe!\n", titulo);
+                                } else {
+                                    if (livro->status == true) {
+                                        printf("\nQual o nome do usuario?\n");
+                                        fgets(nome, STR_TAM, stdin);
+                                        retirar_enter_string(nome);
+                                        formatar_maiuscula(nome);
+
+                                        usuario = localizar_usuarios(lista_usuarios, nome);
+
+                                        if (!usuario) {
+                                            printf("O usuario %s nao existe!\n", nome);
+                                            break;
+                                        } else {
+                                            printf("Quantos dias será emprestado?\n");
+                                            scanf("%d", &qtd_dias);
+                                            inserir_emprestimos_lista(&lista_emprestimos, realizarEmprestimoLivro(usuario, livro, qtd_dias));
+                                        }
+                                    } else printf("O livro %s nao esta disponivel!\n", titulo);
+                                } 
                                 break;
-                        case 2: realizarDevolucaoLivro();
+                        case 2: 
                                 break;
                         default: printf("Opcao invalida.\n");
                     }
                     break;
-            case 4: 
+            case 4: getchar();
+                    printf("\nQual o titulo do livro para dar baixa?\n");
+                    fgets(titulo, STR_TAM, stdin);
+                    retirar_enter_string(titulo);
+                    formatar_maiuscula(titulo);
+                    baixar_exemplares(lista_exemplares);
                     break;
-            case 5: 
+            case 5: getchar();
+                    printf("Digite o criterio de busca (titulo, palavras-chave ou autor): ");
+                    fgets(titulo, STR_TAM, stdin);
+                    retirar_enter_string(titulo);
+                    formatar_maiuscula(titulo);
+                    
+                    livro = localizar_exemplares(lista_exemplares, titulo);
+
+                    if (!livro) {
+                        printf("O livro %s nao existe!\n", titulo);
+                    } else {
+                        mostrar_dados_exemplares(livro);
+                    }
                     break;
-            case 6: 
-                    break;
+            case 6: getchar();
+                    printf("Qual o nome do usuario?\n");
+                    fgets(nome, STR_TAM, stdin);
+                    retirar_enter_string(nome);
+                    formatar_maiuscula(nome);
+
+                    usuario = localizar_usuarios(lista_usuarios, nome);
+
+                    if (!usuario) {
+                        printf("O usuario %s nao existe!\n", nome);
+                    } else {
+                        mostrar_dados_usuarios(usuario);
+                    }      
+                break;
             case 7:
                 subopcao = submenu();
 
                 switch (subopcao) {
-                    case 1: relatorioAcervo(lista_exemplares); 
+
+                    case 1: printf("1 - Mostrar relatorio na tela");
+                            printf("2 - Exportar relatorio em arquivo");
+                            scanf("%d", &subsubopcao);
+                            if (subsubopcao == 1) {
+                                relatorioAcervo(lista_exemplares); 
+                            } else if (subsubopcao == 2) {
+                                printf("Qual o nome do arquivo?\n");
+                                scanf("%s", &nome_arq);
+                                relatorioAcervo_txt(lista_exemplares, nome_arq);
+                            } else printf("Opcao invalida.\n");
                             break;
-                    case 2: relatorioUsuarios(lista_usuarios); 
+                    case 2: printf("1 - Mostrar relatorio na tela");
+                            printf("2 - Exportar relatorio em arquivo");
+                            scanf("%d", &subsubopcao);
+                            if (subsubopcao == 1) {
+                                relatorioUsuarios(lista_usuarios); 
+                            } else if (subsubopcao == 2) {
+                                printf("Qual o nome do arquivo?\n");
+                                scanf("%s", &nome_arq);
+                                relatorioUsuarios_txt(lista_usuarios, nome_arq); 
+                            } else printf("Opcao invalida.\n");
                             break;
-                    case 3: relatorioEmprestimos(lista_emprestimos); 
+                    case 3: printf("1 - Mostrar relatorio na tela");
+                            printf("2 - Exportar relatorio em arquivo");
+                            scanf("%d", &subsubopcao);
+                            if (subsubopcao == 1) {
+                                relatorioEmprestimos(lista_emprestimos, lista_usuarios); 
+                            } else if (subsubopcao == 2) {
+                                printf("Qual o nome do arquivo?\n");
+                                scanf("%s", &nome_arq);
+                                relatorioEmprestimos_txt(lista_emprestimos, lista_usuarios, nome_arq); 
+                            } else printf("Opcao invalida.\n");
                             break;
-                    case 4: relatorioPendencias(); 
+                    case 4: printf("1 - Mostrar relatorio na tela");
+                            printf("2 - Exportar relatorio em arquivo");
+                            scanf("%d", &subsubopcao);
+                            if (subsubopcao == 1) {
+                                relatorioPendencias(lista_emprestimos, lista_usuarios); 
+                            } else if (subsubopcao == 2) {
+                                printf("Qual o nome do arquivo?\n");
+                                scanf("%s", &nome_arq);
+                                relatorioPendencias_txt(lista_emprestimos, lista_usuarios, nome_arq);
+                            } else printf("Opcao invalida.\n");
                             break;
-                    case 5: relatorioLivrosEditados(); 
+                    case 5: printf("1 - Mostrar relatorio na tela");
+                            printf("2 - Exportar relatorio em arquivo");
+                            scanf("%d", &subsubopcao);
+                            if (subsubopcao == 1) {
+                                relatorioLivrosEditados(lista_emprestimos); 
+                            } else if (subsubopcao == 2) {
+                                printf("Qual o nome do arquivo?\n");
+                                scanf("%s", &nome_arq);
+                                relatorioLivrosEditados_txt(lista_exemplares, nome_arq);
+                            } else printf("Opcao invalida.\n");
                             break;
                     default: printf("Opcao invalida.\n");
                 }
                 break;
             case 0: printf("\nSalvando dados...\n");
-                    salvar_dados_exemplares_binario("exemplares.csv", lista_exemplares);
-                    salvar_dados_usuarios_binario("usuarios.csv", lista_usuarios);
-                    salvar_dados_emprestimos_binario("emprestimos.csv", lista_emprestimos);
+                    salvar_dados_exemplares_binario("exemplares.bin", lista_exemplares);
+                    salvar_dados_usuarios_binario("usuarios.bin", lista_usuarios);
+                    salvar_dados_emprestimos_binario("emprestimos.bin", lista_emprestimos);
                     break;
             default: printf("\nOpcao invalida!\n"); 
                     break;
@@ -207,7 +313,7 @@ int submenu()
 }
 
 // Função do menu de controle de empréstimos e devoluções
-int controleEmprestimoDevolucao() 
+int menuEmprestimoDevolucao() 
 {
     int opc;
 
@@ -279,7 +385,7 @@ exemplares_t *cadastrarExemplares()
     formatar_maiuscula(novo->palavras_chave);
 
     printf("Numero de paginas: ");
-    scanf("%i", &novo->num_paginas);
+    scanf("%s", novo->num_paginas); 
 
     printf("Ano de publicacao: ");
     scanf("%i", &novo->ano_publicacao);
@@ -352,22 +458,26 @@ void inserir_usuarios_lista(usuarios_t **lista, usuarios_t *novo)
     }
 }
 
-// Função para salvar os dados de exemplares em arquivo
-void salvar_dados_exemplares_txt(exemplares_t *lista) 
+void relatorioAcervo_txt(exemplares_t *lista, string nome) 
 {
-    FILE *fp = fopen("exemplares.csv", "w");
+    FILE *fp = fopen(nome, "w");
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
 
     while (lista != NULL) {
-        fprintf(fp, "%s\n", lista->titulo);
-        fprintf(fp, "%s\n", lista->autor);
-        fprintf(fp, "%s\n", lista->editora);
-        fprintf(fp, "%s\n", lista->edicao);
-        fprintf(fp, "%s\n", lista->local_publicacao);
-        fprintf(fp, "%s\n", lista->palavras_chave);
-        fprintf(fp, "%s\n", lista->num_paginas);
-        fprintf(fp, "%s\n", lista->ano_publicacao);
-        fprintf(fp, "%i\n", lista->qtd_exemplar);
-        fprintf(fp, "%s\n", lista->preco);
+        fprintf(fp, "Titulo..................: %s\n", lista->titulo);
+        fprintf(fp, "Autor...................: %s\n", lista->autor);
+        fprintf(fp, "Editora.................: %s\n", lista->editora);
+        fprintf(fp, "Edição..................: %s\n", lista->edicao);
+        fprintf(fp, "Local de publicação.....: %s\n", lista->local_publicacao);
+        fprintf(fp, "Palavras-chaves.........: %s\n", lista->palavras_chave);
+        fprintf(fp, "Número de páginas.......: %s\n", lista->num_paginas);
+        fprintf(fp, "Ano de publicação.......: %s\n", lista->ano_publicacao);
+        fprintf(fp, "Quantidade de exemplares: %i\n", lista->qtd_exemplar);
+        fprintf(fp, "Preço...................: %s\n", lista->preco);
         lista = lista->prox;
     }
 
@@ -377,7 +487,7 @@ void salvar_dados_exemplares_txt(exemplares_t *lista)
 
 void salvar_dados_exemplares_binario(string nome, exemplares_t *lista) 
 {
-    FILE *fp = fopen("exemplares.csv", "wb");
+    FILE *fp = fopen("exemplares.bin", "wb");
 
     if (fp == NULL) {
         printf("Erro ao abrir o arquivo.\n");
@@ -390,20 +500,24 @@ void salvar_dados_exemplares_binario(string nome, exemplares_t *lista)
     }
 
     fclose(fp);
-    
 }
 
 // Função para salvar os dados de usuarios em arquivo
-void salvar_dados_usuarios_txt(usuarios_t *lista) 
+void relatorioUsuarios_txt(usuarios_t *lista, string nome) 
 {
-    FILE *fp = fopen("usuarios.csv", "w");
+    FILE *fp = fopen(nome, "w");
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
 
     while (lista != NULL) {
-        fprintf(fp, "%s\n", lista->nome);
-        fprintf(fp, "%s\n", lista->endereco);
-        fprintf(fp, "%i\n", lista->telefone);
-        fprintf(fp, "%s\n", lista->email);
-        fprintf(fp, "%i\n", lista->cpf);
+        fprintf(fp, "Nome....: %s\n", lista->nome);
+        fprintf(fp, "Endereço: %s\n", lista->endereco);
+        fprintf(fp, "Telefone: %i\n", lista->telefone);
+        fprintf(fp, "Email...: %s\n", lista->email);
+        fprintf(fp, "CPF.....: %i\n", lista->cpf);
         lista = lista->prox;
     }
 
@@ -412,14 +526,15 @@ void salvar_dados_usuarios_txt(usuarios_t *lista)
 
 void salvar_dados_usuarios_binario(string nome, usuarios_t *lista) 
 {
-    FILE *fp = fopen("usuarios.csv", "wb");
+    FILE *fp = fopen("usuarios.bin", "wb");
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
 
     while (lista != NULL) {
-        fprintf(fp, "%s\n", lista->nome);
-        fprintf(fp, "%s\n", lista->endereco);
-        fprintf(fp, "%i\n", lista->telefone);
-        fprintf(fp, "%s\n", lista->email);
-        fprintf(fp, "%i\n", lista->cpf);
+        fwrite(lista, sizeof(usuarios_t), 1, fp);
         lista = lista->prox;
     }
 
@@ -429,7 +544,7 @@ void salvar_dados_usuarios_binario(string nome, usuarios_t *lista)
 // Função para salvar dados de emprestimos em arquivo
 void salvar_dados_emprestimos_txt(string nome, emprestimos_t *lista) 
 {
-    FILE *fp = fopen("emprestimos.csv", "w");
+    FILE *fp = fopen(nome, "w");
 
     while (lista != NULL) {
         fprintf(fp, "%i\n", lista->id_usuario);
@@ -445,7 +560,7 @@ void salvar_dados_emprestimos_txt(string nome, emprestimos_t *lista)
 
 void salvar_dados_emprestimos_binario(string nome, emprestimos_t *lista) 
 {
-    FILE *fp = fopen(nome, "wb");
+    FILE *fp = fopen("emprestimos.bin", "wb");
 
     while (lista!= NULL) {
         fprintf(fp, "%i\n", lista->id_usuario);
@@ -462,103 +577,133 @@ void salvar_dados_emprestimos_binario(string nome, emprestimos_t *lista)
 // Função para ler dados de exemplares em arquivo
 void ler_dados_exemplares_binario(string nome, exemplares_t **lista)
 {
-  FILE *fp = fopen("exemplares.csv", "r");
-  string titulo, autor, editora, edicao, local_publicacao, palavras_chave, num_paginas, ano_publicacao;
-  int qtd_exemplar;
-  float preco;
-  exemplares_t *novo = NULL;
+    FILE *fp = fopen("exemplares.bin", "rb");
+    exemplares_t temp;
 
-  if (fp == NULL) {
-    printf("Erro ao abrir o arquivo.\n");
-    return;
-  }
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
 
-  while (!feof(fp)) {
-    fgets(titulo, STR_TAM, fp);
-    retirar_enter_string(titulo);
-    fgets(autor, STR_TAM, fp);
-    retirar_enter_string(autor);
-    fgets(editora, STR_TAM, fp);
-    retirar_enter_string(editora);
-    fgets(edicao, STR_TAM, fp);
-    retirar_enter_string(edicao);
-    fgets(local_publicacao, STR_TAM, fp);
-    retirar_enter_string(local_publicacao);
-    fgets(palavras_chave, STR_TAM, fp);
-    retirar_enter_string(palavras_chave);
-    fgets(num_paginas, STR_TAM, fp);
-    retirar_enter_string(num_paginas);
-    fgets(ano_publicacao, STR_TAM, fp);
-    retirar_enter_string(ano_publicacao);
-    fscanf(fp, "%i", &qtd_exemplar);
-    fscanf(fp, "%f", &preco); 
+    while (fread(&temp, sizeof(exemplares_t), 1, fp)) {
+        exemplares_t *novo = (exemplares_t *)malloc(sizeof(exemplares_t));
+        *novo = temp;
+        novo->prox = NULL;
+        inserir_exemplares_lista(lista, novo);
+    }
 
-    novo = (exemplares_t*)malloc(sizeof(exemplares_t));
-
-    strcpy(novo->titulo, titulo);
-    strcpy(novo->autor, autor);
-    strcpy(novo->editora, editora);
-    strcpy(novo->edicao, edicao);
-    strcpy(novo->local_publicacao, local_publicacao);
-    strcpy(novo->palavras_chave, palavras_chave);
-    strcpy(novo->num_paginas, num_paginas);
-    strcpy(novo->ano_publicacao, ano_publicacao);
-    novo->qtd_exemplar = qtd_exemplar;
-    novo->preco = preco;
-    novo->prox = NULL;
-
-    inserir_exemplares_lista(lista, novo);
-  }
-
-  fclose(fp);
-
+    fclose(fp);
 }
 
 // Função para ler dados de usuarios em arquivo
 void ler_dados_usuarios_binario(string nome, usuarios_t **lista)
 {
-  FILE *fp = fopen("usuarios.csv", "r");
-  int id, telefone;
-  string nome, endereco, email, cpf;
-  usuarios_t *novo = NULL;
+    FILE *fp = fopen("usuarios.csv", "r");
+    usuarios_t temp;
 
-  if (fp == NULL) {
-    printf("Erro ao abrir o arquivo.\n");
-    return;
-  }
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
 
-  while (!feof(fp)) {
-    fscanf(fp, "%i", &id);
-    fgets(nome, STR_TAM, fp);
-    retirar_enter_string(nome);
-    fgets(endereco, STR_TAM, fp);
-    retirar_enter_string(endereco);
-    fscanf(fp, "%i", &telefone);
-    fgets(email, STR_TAM, fp);
-    retirar_enter_string(email);
-    fgets(cpf, STR_TAM, fp);
-    retirar_enter_string(cpf);
+    while (fread(&temp, sizeof(usuarios_t), 1, fp)) {
+        usuarios_t *novo = (usuarios_t *)malloc(sizeof(usuarios_t));
+        *novo = temp;
+        novo->prox = NULL;
+        inserir_usuarios_lista(lista, novo);
+    }
 
-    novo = (usuarios_t*)malloc(sizeof(usuarios_t));
-
-    novo->id = id;
-    strcpy(novo->nome, nome);
-    strcpy(novo->endereco, endereco);
-    strcpy(novo->telefone, telefone);
-    strcpy(novo->email, email);
-    strcpy(novo->cpf, cpf);
-    novo->prox = NULL;
-
-    inserir_usuarios_lista(lista, novo);
-  }
-
-  fclose(fp);
+    fclose(fp);
 
 }
 
 void ler_dados_emprestimos_binario(string nome, emprestimos_t **lista)
 {
-    FILE *fp = fopen("emprestimos.csv", "r");
+    FILE *fp = fopen("emprestimos.bin", "rb");
+    emprestimos_t temp;
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    while (fread(&temp, sizeof(emprestimos_t), 1, fp)) {
+        emprestimos_t *novo = (emprestimos_t *)malloc(sizeof(emprestimos_t));
+        *novo = temp;
+        novo->prox = NULL;
+        inserir_emprestimos_lista(lista, novo);
+    }
+
+    fclose(fp);
+
+}
+
+// Função de localizar usuário por nome
+usuarios_t* localizar_usuarios(usuarios_t *lista, string nome)
+{
+    while (lista) {
+        if (strcmp(lista->nome, nome) == 0) {
+            return lista;
+        }
+        lista = lista->prox;
+    }
+
+    return NULL;
+}
+
+
+void mostrar_dados_usuarios(usuarios_t *lista)
+{
+    printf("ID......: %i\n", lista->id);
+    printf("Nome....: %s\n", lista->nome);
+    printf("Endereco: %s\n", lista->endereco);
+    printf("Telefone: %s\n", lista->telefone);
+    printf("Email...: %s\n", lista->email);
+}
+
+// Função de localizar exemplar por título
+exemplares_t* localizar_exemplares(exemplares_t *lista, string chave)
+{
+    while (lista) {
+        if (strcmp(lista->titulo, chave) || strcmp(lista->autor, chave) || strcmp(lista->palavras_chave, chave) == 0) {
+            return lista;
+        }
+        lista = lista->prox;
+    }
+
+    return NULL;
+}
+
+void inserir_emprestimos_lista(emprestimos_t **lista, emprestimos_t *novo)
+{
+    if (*lista != NULL) {
+        novo->prox = *lista;
+    }
+    *lista = novo;
+}
+
+// Função para dar baixa
+void baixar_exemplares(exemplares_t *lista)
+{
+    exemplares_t *aux = lista;
+    string titulo;
+
+    while (aux != NULL) {
+        if (strcmp(aux->titulo, titulo) == 0) {
+            if (aux->status == 1) {
+                printf("Nao e possivel dar baixa. O exemplar esta emprestado.\n");
+            } else if (aux->qtd_exemplar > 0) {
+                aux->qtd_exemplar -= 1;
+                printf("Baixa realizada com sucesso. Exemplares restantes: %d\n", aux->qtd_exemplar);
+            } else {
+                printf("Nao ha exemplares disponiveis para dar baixa.\n");
+            }
+            return;
+        }
+        aux = aux->prox;
+    }
+
+    printf("Exemplar nao encontrado.\n");
 }
 
 // Funções de relatório
@@ -566,43 +711,159 @@ void relatorioAcervo(exemplares_t *lista)
 {
     exemplares_t *aux = lista;
 
-  while (aux != NULL) {
-    printf("Titulo: %s\n", aux->titulo);
-    printf("Autor: %s\n", aux->autor);
-    printf("Editora: %s\n", aux->editora);
-    printf("Edicao: %s\n", aux->edicao);
-    printf("Local de publicacao: %s\n", aux->local_publicacao);
-    printf("Palavras-chave: %s\n", aux->palavras_chave);
-    printf("Numero de paginas: %i\n", aux->num_paginas);
-    printf("Ano de publicacao: %i\n", aux->ano_publicacao);
-    printf("Quantidade: %i\n", aux->qtd_exemplar);
-    printf("Preco: %.2f\n", aux->preco);
-    aux = aux->prox;
-  }
+    while (aux != NULL) {
+        printf("Titulo: %s\n", aux->titulo);
+        printf("Autor: %s\n", aux->autor);
+        printf("Editora: %s\n", aux->editora);
+        printf("Edicao: %s\n", aux->edicao);
+        printf("Local de publicacao: %s\n", aux->local_publicacao);
+        printf("Palavras-chave: %s\n", aux->palavras_chave);
+        printf("Numero de paginas: %s\n", aux->num_paginas);
+        printf("Ano de publicacao: %i\n", aux->ano_publicacao);
+        printf("Quantidade: %i\n", aux->qtd_exemplar);
+        printf("Preco: %.2f\n", aux->preco);
+        aux = aux->prox;
+    }
 }
 void relatorioUsuarios(usuarios_t *lista)
 {
     usuarios_t *aux = lista;
 
-  while (aux != NULL) {
-    printf("ID: %i\n", aux->id);
-    printf("Nome: %s\n", aux->nome);
-    printf("Endereco: %s\n", aux->endereco);
-    printf("Telefone: %i\n", aux->telefone);
-    printf("Email: %s\n", aux->email);
-    printf("CPF: %i\n", aux->cpf);
-    aux = aux->prox;
-  }
-}
-void relatorioEmprestimos(emprestimos_t *lista)
-{
-    while (lista) {
-        printf("Livro: %s\n", lista->livro_titulo);
-        printf("ID do usuario: %s\n", lista->id_usuario);
-        printf("Quantidade de dias emprestados: %s\n", lista->qtd_dias);
-        printf("Valor do emprestimo: %.2f\n", lista->vlr_atraso);
-        lista = lista->prox;
+    while (aux != NULL) {
+        printf("ID: %i\n", aux->id);
+        printf("Nome: %s\n", aux->nome);
+        printf("Endereco: %s\n", aux->endereco);
+        printf("Telefone: %i\n", aux->telefone);
+        printf("Email: %s\n", aux->email);
+        printf("CPF: %i\n", aux->cpf);
+        aux = aux->prox;
     }
+}
+void relatorioEmprestimos(emprestimos_t *lista_emprestimos, usuarios_t *lista_usuarios)
+{
+    emprestimos_t *aux = lista_emprestimos; 
+    usuarios_t *auxi = lista_usuarios;
+    string nome;
+
+    if (lista_emprestimos == NULL) {
+        printf("Nenhum emprestimo cadastrado.\n");
+        return;
+    }
+
+    while (lista_emprestimos != NULL) {
+
+        while (aux != NULL) {
+            if (auxi->id == lista_emprestimos->id_usuario) {
+                strcpy(nome, auxi->nome);
+            }
+            aux = aux->prox;
+        }
+
+        printf("ID.....: %i\n", lista_emprestimos->id_usuario);
+        printf("Usuario: %s\n", nome);
+        printf("Livro..: %s\n", lista_emprestimos->livro_titulo);
+        printf("Dias...: %i\n", lista_emprestimos->qtd_dias);
+        printf("Valor..: %.2f\n", lista_emprestimos->vlr_atraso);
+        printf("\n");
+        lista_emprestimos = lista_emprestimos->prox;
+    }
+
+}
+
+void relatorioEmprestimos_txt(emprestimos_t *lista_emprestimos, string nome, usuarios_t *lista_usuarios)
+{
+    FILE *fp = fopen(nome, "w");
+    usuarios_t *aux = lista_usuarios;
+    string nome;
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    while (lista_emprestimos != NULL) {
+
+        while (aux != NULL) {
+            if (aux->id == lista_emprestimos->id_usuario) {
+                strcpy(nome, aux->nome);
+            }
+            aux = aux->prox;
+        }
+
+        fprintf(fp, "ID.....: %i\n", lista_emprestimos->id_usuario);
+        fprintf(fp, "Usuario: %s\n", nome);
+        fprintf(fp, "Livro..: %s\n", lista_emprestimos->livro_titulo);
+        fprintf(fp, "Dias...: %i\n", lista_emprestimos->qtd_dias);
+        fprintf(fp, "Valor..: %.2f\n", lista_emprestimos->vlr_atraso);
+        fprintf(fp, "\n");
+
+        lista_emprestimos = lista_emprestimos->prox;
+    }
+
+    fclose(fp);
+}
+
+void relatorioPendencias(emprestimos_t *lista_emprestimos, usuarios_t *lista_usuarios)
+{
+    emprestimos_t *aux = lista_emprestimos;
+    usuarios_t *auxi = lista_usuarios;
+    string nome;
+
+    if (lista_emprestimos == NULL) {
+        printf("Nenhum emprestimo cadastrado.\n");
+        return;
+    }
+
+    while (lista_emprestimos != NULL) {
+
+        while (aux != NULL) {
+            if (auxi->id == lista_emprestimos->id_usuario) {
+                strcpy(nome, auxi->nome);
+            }
+            aux = aux->prox;
+        }
+
+        printf("ID.....: %i\n", lista_emprestimos->id_usuario);
+        printf("Usuario: %s\n", nome);
+        printf("Livro..: %s\n", lista_emprestimos->livro_titulo);
+        printf("Dias...: %i\n", lista_emprestimos->qtd_dias);
+        printf("Valor..: %.2f\n", lista_emprestimos->vlr_atraso);
+        printf("\n");
+        lista_emprestimos = lista_emprestimos->prox;
+    }
+}
+
+void relatorioPendencias_txt(emprestimos_t *lista_emprestimos, string nome, usuarios_t *lista_usuarios)
+{
+    FILE *fp = fopen(nome, "w");
+    usuarios_t *aux = lista_usuarios;
+    string nome;
+
+    if (fp == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return;
+    }
+
+    while (lista_emprestimos != NULL) {
+
+        while (aux != NULL) {
+            if (aux->id == lista_emprestimos->id_usuario) {
+                strcpy(nome, aux->nome);
+            }
+            aux = aux->prox;
+        }
+
+        fprintf(fp, "ID.....: %i\n", lista_emprestimos->id_usuario);
+        fprintf(fp, "Usuario: %s\n", nome);
+        fprintf(fp, "Livro..: %s\n", lista_emprestimos->livro_titulo);
+        fprintf(fp, "Dias...: %i\n", lista_emprestimos->qtd_dias);
+        fprintf(fp, "Valor..: %.2f\n", lista_emprestimos->vlr_atraso);
+        fprintf(fp, "\n");
+
+        lista_emprestimos = lista_emprestimos->prox;
+    }
+
+    fclose(fp);
 }
 
 // Função para formatação (não obrigatório)
